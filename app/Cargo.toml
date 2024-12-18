@@ -1,0 +1,18 @@
+[package]
+name = "app-template"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+# The `tstd_app` feature is requested by the automata_sgx_sdk
+tstd_app = ["automata-sgx-sdk/tstd_app"]
+
+[package.metadata.sgx]
+enclave = { path = "../enclave", config = "sgx/config.xml", edl = "sgx/enclave.edl", lds = "sgx/enclave.lds", key = "sgx/private.pem"}
+
+[dependencies]
+automata-sgx-sdk = { workspace = true }
+mock-lib = { workspace = true }
+
+[build-dependencies]
+automata-build-script = { workspace = true }
