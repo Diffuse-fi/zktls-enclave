@@ -19,7 +19,27 @@ enclave {
     untrusted {
         /* Define the OCALLs to be called by trusted */
 
-        void untrusted_execution(int random_number);
+        void ocall_http_request(
+            [in, size=buf_len] const char* input_json,
+            size_t buf_len,
+            [out, size=max_buf_len] char* result,
+            size_t max_buf_len,
+            [out] size_t* actual_len,
+            [out] uint16_t* http_status
+        );
+
+        void ocall_write_to_file(
+            [in, size=response_json_len] char* response_json_bytes,
+            size_t response_json_len,
+            [in, size=filename_len] char* filename_bytes,
+            size_t filename_len
+        );
+
+        void ocall_read_from_file(
+            [out, size=pairs_list_buffer_len] char* pairs_list_buffer,
+            size_t pairs_list_buffer_len,
+            [out] size_t* pairs_list_actual_len
+        );
     };
 
 };
