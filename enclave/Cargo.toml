@@ -18,4 +18,5 @@ serde_json = { workspace = true }
 hex = { workspace = true }
 alloy-chains = { workspace = true }
 tiny-keccak = { version = "2.0.2", features = ["sha3"] }
+ethabi = { version = "18.0.0", default-features = false }
 

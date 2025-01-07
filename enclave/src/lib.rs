@@ -7,6 +7,7 @@ use std::string::String;
 use tiny_keccak::Keccak;
 use tiny_keccak::Hasher;
 use hex;
+use ethabi::{Token, Uint};
 
 // Declare the OCALL function. The automata_sgx_sdk will link the OCALL to the mock_lib.
 
@@ -95,51 +96,89 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
 
     // We don't need to output the data exactly as it came from the server.
     // The enclave content is trusted, so why not output JSON in a convenient form?
-    let mut processed_prices = Map::new();
 
-    json_from_server.as_array()
+    let filtered_items: Vec<(String, u64, u64)> = json_from_server
+        .as_array()
         .expect("Expected JSON array")
         .iter()
-        .filter(|item| {
-            item["symbol"].as_str()
-            .map(|s| currency_pairs.contains(&s.to_string()))
-                .unwrap_or(false)
+        .filter_map(|item| {
+            let pair = item["symbol"].as_str()?;
+
+            println! ("let pair: {}", pair);
+
+            println! ("currency_pairs.contains(&pair.to_string()): {}", currency_pairs.contains(&pair.to_string()));
+
+            if !currency_pairs.contains(&pair.to_string()) {
+                println! ("!currency_pairs.contains(&pair.to_string())");
+                return None;
+            }
+
+            let price_str = item["lastPrice"].as_str()?;
+            let integer_and_fractional: Vec<&str> = price_str.split('.').collect();
+
+            if integer_and_fractional.len() != 2 {
+                panic!("price is not float number!");
+            }
+
+            let integer: u64 = integer_and_fractional[0].parse().expect("Failed to parse integer part");
+            let fractional: u64 = integer_and_fractional[1].parse().expect("Failed to parse fractional part");
+
+            let mut price: u64 = integer * 100000000;
+            const HARDCODED_DECIMALS: u32 = 8;
+            let decimal_points: u32 = integer_and_fractional[1].chars().count().try_into().unwrap();
+            assert!(decimal_points <= HARDCODED_DECIMALS, "price decimal points <= 8 are hardcoded"); // TODO 8 hardcoded
+
+            price += fractional * 10u64.pow(HARDCODED_DECIMALS - decimal_points);
+
+            let timestamp = item["closeTime"].as_u64()?;
+
+            println! ("pair: {}", pair);
+            println! ("price: {}", price);
+            println! ("timestamp: {}", timestamp);
+
+            Some((pair.to_string(), price, timestamp))
         })
-        .for_each(|item| {
-            let symbol = item["symbol"].as_str().unwrap_or_default();
+        .collect();
 
-    processed_prices.insert(
-        symbol.to_string(),
-        json!({
-            "price": item["lastPrice"],
-            "closeTime": item["closeTime"]
-        })
-        );
-    });
+    println!("filtered_items:{:?}", filtered_items);
 
-    let processed_prices_value = Value::Object(processed_prices);
+    let pairs: Vec<String> = filtered_items.iter().map(|(pair, _, _)| pair.clone()).collect();
+    let prices: Vec<String> = filtered_items.iter().map(|(_, price, _)| price.to_string()).collect();
+    let timestamps: Vec<String> = filtered_items.iter().map(|(_, _, timestamp)| timestamp.to_string()).collect();
 
-    let processed_json_bytes = serde_json::to_vec_pretty(&processed_prices_value)
-        .expect("Failed to serialize JSON");
-    println! ("processed_json: {}", String::from_utf8_lossy(&processed_json_bytes));
+    println!("pairs:     {:?}", pairs);
+    println!("Prices:      {:?}", prices);
+    println!("Close times: {:?}", timestamps);
 
-    // There is only 64 bytes of user data in the enclave, server response cannot fit
-    // we write to enclave only its hash to ensure that output is authentic
-    let filename_bytes = create_buffer_from_stirng("requested_prices.bin".to_string());
-    ocall_write_to_file (
-        processed_json_bytes.as_ptr(),
-        processed_json_bytes.len(),
-        filename_bytes.as_ptr(),
-        filename_bytes.len()
-    );
+    print_vec_of_strings(pairs, "pairs.bin");
+    print_vec_of_strings(prices, "prices.bin");
+    print_vec_of_strings(timestamps, "timestamps.bin");
 
-    let mut hasher = Keccak::v256();
-    hasher.update(&processed_json_bytes);
-    let mut hashed_response = [0u8; 32];
-    hasher.finalize(&mut hashed_response);
+    let mut all_hashes = Vec::new();
 
-    let hashed_response_str = hex::encode(hashed_response);
-    println!("hashed_response_str: {}", hashed_response_str);
+    for (pair, price, timestamp) in &filtered_items {
+        let pair_hash     = abi_encode_and_keccak(InputValue::Str(pair.clone()));
+        let price_hash      = abi_encode_and_keccak(InputValue::U64(*price));
+        let timestamp_hash = abi_encode_and_keccak(InputValue::U64(*timestamp));
+
+        // debug info
+        println!("pair_hash:     0x{}", hex::encode(pair_hash));
+        println!("price_hash:      0x{}", hex::encode(price_hash));
+        println!("timestamp_hash: 0x{}", hex::encode(timestamp_hash));
+        println!("----------------------------------------------");
+
+        all_hashes.extend_from_slice(&pair_hash);
+        all_hashes.extend_from_slice(&price_hash);
+        all_hashes.extend_from_slice(&timestamp_hash);
+    }
+
+
+    let mut final_hasher = Keccak::v256();
+    final_hasher.update(&all_hashes);
+    let mut final_hash = [0u8; 32];
+    final_hasher.finalize(&mut final_hash);
+
+    println!("Final hash of all items: 0x{}", hex::encode(final_hash));
 
     // The following code is used to generate an attestation report
     // Must be run on sgx-supported machine
@@ -154,11 +193,9 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
         0u8, 1u8, 2u8, 3u8, 4u8, 5u8, 6u8, 7u8
         ];
 
-    data[..32].copy_from_slice(&hashed_response);
+    data[..32].copy_from_slice(&final_hash);
     // TODO could add hashed request is some form, like pairs list, it is from file, not trusted
     // data[32..].copy_from_slice(&hashed_request);
-
-    println!("Data: {:x?}", data);
 
     let attestation = automata_sgx_sdk::dcap::dcap_quote(data);
     let result = match attestation {
@@ -191,3 +228,58 @@ fn create_buffer_from_stirng(mut input: String) -> Vec<u8> {
     }
     input.into_bytes()
 }
+
+unsafe fn print_vec_of_strings(input: Vec<String>, filename: &str) {
+
+    let joined = input.join("\n");
+    let input_bytes = create_buffer_from_stirng(joined.to_string());
+
+    let filename_bytes = create_buffer_from_stirng(filename.to_string());
+
+    ocall_write_to_file (
+        input_bytes.as_ptr(),
+        input_bytes.len(),
+        filename_bytes.as_ptr(),
+        filename_bytes.len()
+    );
+}
+
+
+#[derive(Debug)]
+enum InputValue {
+    Str(String),
+    U64(u64),
+}
+
+fn abi_encode_and_keccak(input: InputValue) -> [u8; 32] {
+
+    let token = match input {
+        InputValue::Str(s) => Token::String(s),
+        InputValue::U64(n) => Token::Uint(Uint::from(n)),
+    };
+
+    let encoded = encode_packed(token);
+
+    let mut hasher = Keccak::v256();
+    hasher.update(&encoded);
+    let mut output = [0u8; 32];
+    hasher.finalize(&mut output);
+
+    output
+}
+
+
+fn encode_packed(token: Token) -> Vec<u8> {
+    match token {
+        Token::String(s) => s.into_bytes(),
+
+        Token::Uint(u) => {
+            let mut buf = [0u8; 32];
+            u.to_big_endian(&mut buf);
+            buf.to_vec()
+        }
+
+        _ => unimplemented!("encodePacked is not implemented for {:?}", token),
+    }
+}
+
