@@ -1,1 +1,7 @@
 /target
+.idea
+
+pairs.bin
+prices.bin
+sgx_quote.bin
+timestamps.bin

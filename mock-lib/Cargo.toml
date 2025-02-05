@@ -7,9 +7,6 @@ edition = "2021"
 name = "mock_lib"
 crate-type = ["rlib"]
 
-[dependencies]
-reqwest = { version = "0.12.9", features = ["blocking", "json"] }
-
 [features]
 default = ["std"]
 std = []

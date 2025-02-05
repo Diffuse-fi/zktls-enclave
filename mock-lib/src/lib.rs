@@ -1,84 +1,120 @@
-use reqwest::blocking::Client;
-use std::slice;
-use std::fs;
+extern crate core;
 
+use core::slice;
+use std::{
+    ffi::CStr,
+    fs,
+    io::{Read, Write},
+    net::TcpStream,
+    os::raw::c_char,
+    ptr,
+    time::Duration,
+};
+
+const DEFAULT_TCP_TIMEOUT_SEC: u64 = 5;
+
+// # Safety
+// The caller must ensure that the `server_address` is a valid C string.
+// The caller must ensure that the `stream_ptr` is a valid pointer to a pointer.
 #[no_mangle]
-pub fn ocall_http_request(
-    symbols: *const u8,
-    symbols_len: usize,
-    result: *mut u8,
-    result_max_len: usize,
-    actual_len: *mut usize,
-    http_status: *mut u16
+pub unsafe extern "C" fn ocall_get_tcp_stream(
+    server_address: *const u8,
+    stream_ptr: *mut *mut core::ffi::c_void,
 ) {
-    println!("=============== Untrusted http_request =================");
-    let symbols_slice = unsafe { slice::from_raw_parts(symbols, symbols_len) };
-    let symbols_str = match std::str::from_utf8(symbols_slice) {
-        Ok(s) => {
-            println! ("parsed request params");
-            println! ("{}", s);
-            s.trim_end_matches('\0')
-        },
+    println!("=============== Untrusted get_tcp_stream =================");
+    let cstr = CStr::from_ptr(server_address as *const c_char);
+    let address = match cstr.to_str() {
+        Ok(s) => s,
         Err(_) => {
-            println! ("failed to parse request params outside the TEE");
+            *stream_ptr = ptr::null_mut();
             return;
-        },
-    };
-
-    let base_url = "https://data-api.binance.vision";
-    let endpoint = "/api/v3/ticker/24hr";
-    let url = format!("{}{}", base_url, endpoint);
-
-    let client = Client::new();
-    let res = client.get(&url)
-        .query(&[("symbols", symbols_str)])
-        .send();
-
-    match res {
-        Ok(response) => {
-            let status_code = response.status().as_u16();
-            let body = response.text().unwrap_or_else(|_| "Error".to_string());
-            let body_bytes = body.as_bytes();
-
-            assert! (body_bytes.len() <= result_max_len, "http response does not fit into buffer");
-            unsafe {
-                std::ptr::copy_nonoverlapping(body_bytes.as_ptr(), result, body_bytes.len());
-                *actual_len = body_bytes.len();
-                *http_status = status_code;
-            }
-            println! ("status_code: {}", status_code);
-
         }
-        Err(err) => {
-            let status = err.status().expect("Status must be present");
-            unsafe {*http_status = status.as_u16();}
+    };
+    println!("Tcp connection for {}", address);
+
+    match TcpStream::connect(address) {
+        Ok(stream) => {
+            let _ = stream.set_read_timeout(Some(Duration::from_secs(DEFAULT_TCP_TIMEOUT_SEC)));
+            let _ = stream.set_write_timeout(Some(Duration::from_secs(DEFAULT_TCP_TIMEOUT_SEC)));
+            let boxed_stream = Box::new(stream);
+
+            let raw_stream = Box::into_raw(boxed_stream) as *mut core::ffi::c_void;
+            ptr::write_unaligned(stream_ptr, raw_stream);
+        }
+        Err(e) => {
+            eprintln!("ocall_get_tcp_stream failed: {}", e);
+            *stream_ptr = ptr::null_mut();
         }
     }
-
-    println!("=============== End of untrusted http_request =================");
+    println!("=============== End of untrusted get_tcp_stream =================");
 }
 
-
+// # Safety
+// The caller must ensure that the `stream_ptr` is a valid pointer to a TcpStream.
+// The caller must ensure that the `data` is a valid pointer to a buffer of `data_len` bytes.
 #[no_mangle]
-pub fn ocall_write_to_file(
+pub unsafe extern "C" fn ocall_tcp_write(
+    stream_ptr: *mut core::ffi::c_void,
+    data: *const u8,
+    data_len: usize,
+) {
+    println!("=============== Untrusted tcp_write =================");
+    if stream_ptr.is_null() {
+        return;
+    }
+    let stream = &mut *(stream_ptr as *mut TcpStream);
+    let slice = slice::from_raw_parts(data, data_len);
+    let _ = stream
+        .write(slice)
+        .inspect_err(|e| println!("ocall_tcp_write error: {}", e))
+        .unwrap_or_default();
+    println!("=============== End of untrusted tcp_write =================");
+}
+
+// # Safety
+// The caller must ensure that the `stream_ptr` is a valid pointer to a TcpStream.
+// The caller must ensure that the `buffer` is a valid pointer to a buffer of `max_len` bytes.
+#[no_mangle]
+pub unsafe extern "C" fn ocall_tcp_read(
+    stream_ptr: *mut core::ffi::c_void,
+    buffer: *mut u8,
+    max_len: usize,
+    read_len: *mut usize,
+) {
+    println!("=============== Untrusted tcp_read =================");
+    if stream_ptr.is_null() {
+        *read_len = 0;
+        return;
+    }
+    let stream = &mut *(stream_ptr as *mut TcpStream);
+    let buf = slice::from_raw_parts_mut(buffer, max_len);
+    let stream_read_len = stream
+        .read(buf)
+        .inspect_err(|e| println!("ocall_tcp_read error: {}", e))
+        .unwrap_or_default();
+    *read_len = stream_read_len;
+    println!("=============== End of untrusted tcp_read =================");
+}
+
+// # Safety
+#[no_mangle]
+pub unsafe fn ocall_write_to_file(
     data_buffer: *const u8,
     data_len: usize,
     filename_buffer: *const u8,
     filename_len: usize,
 ) {
     println!("=============== Untrusted write_to_file =================");
-    let data: &[u8] = unsafe {
-        assert!(!data_buffer.is_null(), "Data pointer is null");
-        slice::from_raw_parts(data_buffer, data_len)
-    };
+    assert!(!data_buffer.is_null(), "Data pointer is null");
 
-    let filename: &[u8] = unsafe {
-        assert!(!filename_buffer.is_null(), "Filename pointer is null");
-        slice::from_raw_parts(filename_buffer, filename_len)
-    };
+    let data: &[u8] = slice::from_raw_parts(data_buffer, data_len);
 
-    let filename_str_raw = std::str::from_utf8(filename).expect("unable to read string from filename buffer");
-    let filename_str =  filename_str_raw.trim_end_matches('\0');
+    assert!(!filename_buffer.is_null(), "Filename pointer is null");
+    let filename: &[u8] = slice::from_raw_parts(filename_buffer, filename_len);
+
+    let filename_str_raw =
+        std::str::from_utf8(filename).expect("unable to read string from filename buffer");
+    let filename_str = filename_str_raw.trim_end_matches('\0');
 
     fs::write(filename_str, data).expect("Failed to write bytes to file");
 
@@ -86,10 +122,10 @@ pub fn ocall_write_to_file(
 }
 
 #[no_mangle]
-pub fn ocall_read_from_file(
+pub unsafe fn ocall_read_from_file(
     pairs_list_buffer: *mut u8,
     pairs_list_buffer_len: usize,
-    pairs_list_actual_len: *mut usize
+    pairs_list_actual_len: *mut usize,
 ) {
     println!("=============== Untrusted read_from_file =================");
 
@@ -97,11 +133,12 @@ pub fn ocall_read_from_file(
 
     let pairs_list = fs::read(pairs_list_path).expect("Unable to read file");
 
-    assert! (pairs_list.len() <= pairs_list_buffer_len, "pairs list does not fit into pairs_list_buffer!");
-    unsafe {
-        std::ptr::copy_nonoverlapping(pairs_list.as_ptr(), pairs_list_buffer, pairs_list.len());
-        *pairs_list_actual_len = pairs_list.len();
-    }
+    assert!(
+        pairs_list.len() <= pairs_list_buffer_len,
+        "pairs list does not fit into pairs_list_buffer!"
+    );
+    ptr::copy_nonoverlapping(pairs_list.as_ptr(), pairs_list_buffer, pairs_list.len());
+    *pairs_list_actual_len = pairs_list.len();
 
     println!("=============== End of untrusted read_from_file =================");
 }

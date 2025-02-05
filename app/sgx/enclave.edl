@@ -11,22 +11,17 @@ enclave {
     from "sgx_dcap.edl" import *;
 
     trusted {
-        /* Define the ECALLs to be called by untrusted */
-
         public sgx_status_t trusted_execution();
     };
 
     untrusted {
         /* Define the OCALLs to be called by trusted */
 
-        void ocall_http_request(
-            [in, size=buf_len] const char* input_json,
-            size_t buf_len,
-            [out, size=max_buf_len] char* result,
-            size_t max_buf_len,
-            [out] size_t* actual_len,
-            [out] uint16_t* http_status
-        );
+        void ocall_get_tcp_stream([in, string] const char* server_address, [out] void** stream_ptr);
+
+        void ocall_tcp_write([user_check] void* stream_ptr, [in, size=data_len] const uint8_t* data, size_t data_len);
+
+        void ocall_tcp_read([user_check] void* stream_ptr, [out, size=max_len] uint8_t* buffer, size_t max_len, [out] size_t* read_len);
 
         void ocall_write_to_file(
             [in, size=response_json_len] char* response_json_bytes,
