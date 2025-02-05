@@ -6,14 +6,10 @@
   </picture>
 </div>
 
-# Automata SGX Scaffold
+# Diffuse zkTLS
 [![Automata SGX SDK](https://img.shields.io/badge/Power%20By-Automata%20SGX%20SDK-orange.svg)](https://github.com/automata-network/automata-sgx-sdk)
 
-This is a scaffold for creating an SGX enclave with Rust. It shows how to build an enclave based on the [Automata SGX SDK](https://github.com/automata-network/automata-sgx-sdk), which makes it easier for developers to get started with SGX. The project contains the basic guide for the following scenarios:
-- Call the code inside the enclave via ECALL
-- Call the code outside the enclave via OCALL
-- Use libraries inside the enclave
-- Generate DCAP attestation report
+This is a fork of the Automata SGX SDK, which is a Rust-based SDK for developing Intel SGX enclaves. This repository contains the implementation of the zkTLS enclave, which is used to provide privacy-preserving TLS connections.
 
 ## Project Structure
 <pre>
@@ -26,19 +22,12 @@ This is a scaffold for creating an SGX enclave with Rust. It shows how to build 
 │ ├── <a href="./app/src/main.rs">src/main.rs</a>: Main entrypoint for the application
 │ └── <a href="./app/build.rs">build.rs</a>: Builder code used to build the application, you don't need change it
 ├── <a href="./enclave/">enclave</a>: The SGX enclave implementation
-│ └── <a href="./enclave/src/lib.rs">lib.rs</a>: Main library file for the enclave implementation
-├── <a href="./mock-lib/">mock-lib</a>: A mock library which is called by the enclave via OCALL
-│ └── <a href="./mock-lib/src/lib.rs">lib.rs</a>: Main library file for the mock library implementation
+│   └── <a href="./enclave/src/lib.rs">src/lib.rs</a>: Main library file for the enclave
+│       ├── <a href="./enclave/src/error.rs">error.rs</a>: Error types and result alias
+│       ├── <a href="./enclave/src/tcp_stream_oc.rs">tcp_stream_oc.rs</a>: Untrusted TCP stream wrapper
+│       └── <a href="./enclave/src/tls.rs">tls.rs</a>: TLS connection implementation
+└── <a href="./mock-lib/">mock-lib</a>: Mock library for OCALL implementations
 </pre>
-
-## Your First Enclave
-Following the steps below to create your first enclave.
-
-1. Modify the `enclave/src/lib.rs` file to add your business logic. You can use other libraries just like writing a normal Rust program. Refer to the usage of `serde_json` as an example. 
-2. Update the `app/sgx/enclave.edl` file if you need to change the ECALL interface or add new ECALLs.
-3. Refer to the usage `mock-lib` if you want to use libraries via OCALL. For example, you need to use a library that use instructions not allowed(such as CPUID or GETSEC) in enclave.
-
-Refer to the [Automata DCAP Attestation](https://github.com/automata-network/automata-dcap-attestation) repo for more details about verification of the DCAP attestation.
 
 ## Building the Enclave
 ### Prerequisites
@@ -52,10 +41,9 @@ If you don't have a machine with SGX support, we recommend you to create a [`DCs
 > You need to have a sgx-supported machine with SGX and DCAP SDK installed to build the enclave manually.
 #### Clone the repository
 ```bash
-git clone https://github.com/automata-network/sgx-scaffold.git
-cd sgx-scaffold
+git clone https://github.com/Diffuse-fi/zktls-enclave.git
+cd zktls-enclave
 ```
-You can click the `Use this template` button to create a new repository.
 
 #### Install cargo-sgx
 ```bash
@@ -74,6 +62,11 @@ cargo sgx gen-key app/sgx/private.pem
 
 #### Build the Enclave
 
+Export `SGX_SDK` environment variable first (default path here, change if you installed SGX SDK somewhere else)
+```bash
+export SGX_SDK=/opt/intel/sgxsdk
+```
+then you cah build the enclave
 ```bash
 cargo sgx build
 ```
@@ -83,34 +76,7 @@ cargo sgx run
 ```
 You can find the executable file in `./target/debug` or `./target/release` directory.
 
-### Build with Docker
-
-> You need to have a sgx-supported machine to build the enclave with docker. Make sure you got the docker and docker-compose installed.
-
-Build image for ubuntu 20.04
+Also, you can run/build the enclave with the `std` flag, which will disable the SGX feature and run the enclave as a normal Rust application.
 ```bash
-$ cd docker/ubuntu-20.04
-$ docker compose build
-```
-
-Build image for ubuntu 22.04
-```bash
-$ cd docker/ubuntu-22.04
-$ docker compose build
-```
-
-We also have the prebuilt docker image in [here](https://github.com/automata-network/sgx-scaffold/pkgs/container/sgx-scaffold)
-
-#### Run with Docker
-
-Run image for ubuntu 20.04
-```bash
-$ cd docker/ubuntu-20.04
-$ docker compose run sgx-scaffold
-```
-
-Run image for ubuntu 22.04
-```bash
-$ cd docker/ubuntu-22.04
-$ docker compose run sgx-scaffold
+cargo sgx run --std
 ```

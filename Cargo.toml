@@ -11,10 +11,17 @@ homepage = "https://www.ata.network/"
 [workspace.dependencies]
 automata-sgx-sdk = { git = "https://github.com/automata-network/automata-sgx-sdk", branch = "main" }
 automata-build-script = { git = "https://github.com/automata-network/automata-sgx-sdk", branch = "main" }
-mock-lib = { path = "mock-lib" }
-# Use external libraries in the enclave
-serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1" }
+ethabi = { version = "18.0.0", default-features = false }
+tiny-keccak = "2.0.2"
+serde = "1"
+serde_json = "1"
 hex = "0.4"
-alloy-chains = "=0.1.36"
+rustls = "0.22.4"
+webpki-roots = "0.26.6"
+reqwest = "0.12.9"
+thiserror = "2.0.12"
 
+mock-lib = { path = "mock-lib" }
+
+[patch.crates-io]
+ring = { git = "https://github.com/automata-network/ring-sgx", rev = "e9b37b8f5a7c3331b21a6650f1ce6653d70d0923" }

@@ -12,11 +12,13 @@ name = "enclave"
 crate-type = ["staticlib"]
 
 [dependencies]
-automata-sgx-sdk = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-hex = { workspace = true }
-alloy-chains = { workspace = true }
-tiny-keccak = { version = "2.0.2", features = ["sha3"] }
-ethabi = { version = "18.0.0", default-features = false }
+automata-sgx-sdk.workspace = true
+ethabi.workspace = true
+serde_json.workspace = true
+hex.workspace = true
+rustls.workspace = true
+webpki-roots.workspace = true
+thiserror.workspace = true
 
+serde = { workspace = true, features = ["derive"]}
+tiny-keccak = { workspace = true, features = ["sha3"]}
