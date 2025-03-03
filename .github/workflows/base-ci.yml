@@ -1,0 +1,19 @@
+name: rust fmt check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Install Rust nightly toolchain
+        run: rustup toolchain install nightly
+      - name: Run rustfmt check
+        run: cargo +nightly fmt -- --check --config imports_granularity=Crate --config group_imports=StdExternalCrate
