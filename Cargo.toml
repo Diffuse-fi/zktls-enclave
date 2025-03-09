@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["app", "enclave", "mock-lib"]
+members = ["bin/zktls-pairs", "crates/enclave", "crates/untrusted-host"]
 
 [workspace.package]
 version = "0.1.0"
@@ -21,7 +21,7 @@ webpki-roots = "0.26.6"
 reqwest = "0.12.9"
 thiserror = "2.0.12"
 
-mock-lib = { path = "mock-lib" }
+untrusted-host = { path = "crates/untrusted-host" }
 
 [patch.crates-io]
 ring = { git = "https://github.com/automata-network/ring-sgx", rev = "e9b37b8f5a7c3331b21a6650f1ce6653d70d0923" }
