@@ -10,3 +10,6 @@ crate-type = ["rlib"]
 [features]
 default = ["std"]
 std = []
+
+[dependencies]
+tracing.workspace = true

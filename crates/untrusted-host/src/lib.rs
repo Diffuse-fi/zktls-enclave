@@ -21,7 +21,7 @@ pub unsafe extern "C" fn ocall_get_tcp_stream(
     server_address: *const u8,
     stream_ptr: *mut *mut core::ffi::c_void,
 ) {
-    println!("=============== Untrusted get_tcp_stream =================");
+    tracing::debug!("=============== Untrusted get_tcp_stream =================");
     let cstr = CStr::from_ptr(server_address as *const c_char);
     let address = match cstr.to_str() {
         Ok(s) => s,
@@ -30,7 +30,7 @@ pub unsafe extern "C" fn ocall_get_tcp_stream(
             return;
         }
     };
-    println!("Tcp connection for {}", address);
+    tracing::debug!("Tcp connection for {}", address);
 
     match TcpStream::connect(address) {
         Ok(stream) => {
@@ -42,11 +42,11 @@ pub unsafe extern "C" fn ocall_get_tcp_stream(
             ptr::write_unaligned(stream_ptr, raw_stream);
         }
         Err(e) => {
-            eprintln!("ocall_get_tcp_stream failed: {}", e);
+            tracing::error!("ocall_get_tcp_stream failed: {}", e);
             *stream_ptr = ptr::null_mut();
         }
     }
-    println!("=============== End of untrusted get_tcp_stream =================");
+    tracing::debug!("=============== End of untrusted get_tcp_stream =================");
 }
 
 // # Safety
@@ -58,7 +58,7 @@ pub unsafe extern "C" fn ocall_tcp_write(
     data: *const u8,
     data_len: usize,
 ) {
-    println!("=============== Untrusted tcp_write =================");
+    tracing::debug!("=============== Untrusted tcp_write =================");
     if stream_ptr.is_null() {
         return;
     }
@@ -66,9 +66,9 @@ pub unsafe extern "C" fn ocall_tcp_write(
     let slice = slice::from_raw_parts(data, data_len);
     let _ = stream
         .write(slice)
-        .inspect_err(|e| println!("ocall_tcp_write error: {}", e))
+        .inspect_err(|e| tracing::error!("ocall_tcp_write error: {}", e))
         .unwrap_or_default();
-    println!("=============== End of untrusted tcp_write =================");
+    tracing::debug!("=============== End of untrusted tcp_write =================");
 }
 
 // # Safety
@@ -81,7 +81,7 @@ pub unsafe extern "C" fn ocall_tcp_read(
     max_len: usize,
     read_len: *mut usize,
 ) {
-    println!("=============== Untrusted tcp_read =================");
+    tracing::debug!("=============== Untrusted tcp_read =================");
     if stream_ptr.is_null() {
         *read_len = 0;
         return;
@@ -90,10 +90,10 @@ pub unsafe extern "C" fn ocall_tcp_read(
     let buf = slice::from_raw_parts_mut(buffer, max_len);
     let stream_read_len = stream
         .read(buf)
-        .inspect_err(|e| println!("ocall_tcp_read error: {}", e))
+        .inspect_err(|e| tracing::error!("ocall_tcp_read error: {}", e))
         .unwrap_or_default();
     *read_len = stream_read_len;
-    println!("=============== End of untrusted tcp_read =================");
+    tracing::debug!("=============== End of untrusted tcp_read =================");
 }
 
 // # Safety
@@ -104,7 +104,7 @@ pub unsafe fn ocall_write_to_file(
     filename_buffer: *const u8,
     filename_len: usize,
 ) {
-    println!("=============== Untrusted write_to_file =================");
+    tracing::debug!("=============== Untrusted write_to_file =================");
     assert!(!data_buffer.is_null(), "Data pointer is null");
 
     let data: &[u8] = slice::from_raw_parts(data_buffer, data_len);
@@ -118,7 +118,7 @@ pub unsafe fn ocall_write_to_file(
 
     fs::write(filename_str, data).expect("Failed to write bytes to file");
 
-    println!("=============== End of untrusted write_to_file =================");
+    tracing::debug!("=============== End of untrusted write_to_file =================");
 }
 
 #[no_mangle]
@@ -127,7 +127,7 @@ pub unsafe fn ocall_read_from_file(
     pairs_list_buffer_len: usize,
     pairs_list_actual_len: *mut usize,
 ) {
-    println!("=============== Untrusted read_from_file =================");
+    tracing::debug!("=============== Untrusted read_from_file =================");
 
     let pairs_list_path = "pairs/list.txt";
 
@@ -140,5 +140,5 @@ pub unsafe fn ocall_read_from_file(
     ptr::copy_nonoverlapping(pairs_list.as_ptr(), pairs_list_buffer, pairs_list.len());
     *pairs_list_actual_len = pairs_list.len();
 
-    println!("=============== End of untrusted read_from_file =================");
+    tracing::debug!("=============== End of untrusted read_from_file =================");
 }

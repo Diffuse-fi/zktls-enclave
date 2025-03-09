@@ -10,10 +10,8 @@ automata_sgx_sdk::enclave! {
 }
 
 fn main() {
-    println!("=============== Starting the zktls-pairs =================");
     let result = Enclave::new().trusted_execution().unwrap();
     if !result.is_success() {
         println!("{:?}", result);
     }
-    println!("=============== End of the zktls-pairs =================");
 }
