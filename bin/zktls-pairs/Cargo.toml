@@ -1,5 +1,5 @@
 [package]
-name = "app-template"
+name = "zktls-pairs"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,11 +8,11 @@ edition = "2021"
 tstd_app = ["automata-sgx-sdk/tstd_app"]
 
 [package.metadata.sgx]
-enclave = { path = "../enclave", config = "sgx/config.xml", edl = "sgx/enclave.edl", lds = "sgx/enclave.lds", key = "sgx/private.pem"}
+enclave = { path = "../../crates/enclave", config = "sgx/config.xml", edl = "sgx/enclave.edl", lds = "sgx/enclave.lds", key = "sgx/private.pem"}
 
 [dependencies]
 automata-sgx-sdk = { workspace = true }
-mock-lib = { workspace = true }
+untrusted-host = { workspace = true }
 
 [build-dependencies]
 automata-build-script = { workspace = true }

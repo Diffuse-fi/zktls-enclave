@@ -13,20 +13,20 @@ This is a fork of the Automata SGX SDK, which is a Rust-based SDK for developing
 
 ## Project Structure
 <pre>
-├── <a href="./app/">app</a>: The main application
-│ ├── <a href="./app/sgx">sgx</a>: Configurations for the enclave
-│ │ ├── <a href="./app/sgx/config.xml">config.xml</a>: Developer defined parameters of the enclave
-│ │ ├── <a href="./app/sgx/enclave.edl">enclave.edl</a>: Enclave Definition Language file defining the enclave interface
-│ │ ├── <a href="./app/sgx/enclave.lds">enclave.lds</a>: Linker script for the enclave
-│ │ └── <a href="./app/sgx/private.pem">private.pem</a>: Developer key used to sign the enclave, do not use this key to sign your enclave in production, please use your own key
-│ ├── <a href="./app/src/main.rs">src/main.rs</a>: Main entrypoint for the application
-│ └── <a href="./app/build.rs">build.rs</a>: Builder code used to build the application, you don't need change it
-├── <a href="./enclave/">enclave</a>: The SGX enclave implementation
-│   └── <a href="./enclave/src/lib.rs">src/lib.rs</a>: Main library file for the enclave
-│       ├── <a href="./enclave/src/error.rs">error.rs</a>: Error types and result alias
-│       ├── <a href="./enclave/src/tcp_stream_oc.rs">tcp_stream_oc.rs</a>: Untrusted TCP stream wrapper
-│       └── <a href="./enclave/src/tls.rs">tls.rs</a>: TLS connection implementation
-└── <a href="./mock-lib/">mock-lib</a>: Mock library for OCALL implementations
+├── <a href="bin/zktls-pairs/">app</a>: The main application
+│ ├── <a href="bin/zktls-pairs/sgx">sgx</a>: Configurations for the enclave
+│ │ ├── <a href="bin/zktls-pairs/sgx/config.xml">config.xml</a>: Developer defined parameters of the enclave
+│ │ ├── <a href="bin/zktls-pairs/sgx/enclave.edl">enclave.edl</a>: Enclave Definition Language file defining the enclave interface
+│ │ ├── <a href="bin/zktls-pairs/sgx/enclave.lds">enclave.lds</a>: Linker script for the enclave
+│ │ └── <a href="bin/zktls-pairs/sgx/private.pem">private.pem</a>: Developer key used to sign the enclave, do not use this key to sign your enclave in production, please use your own key
+│ ├── <a href="bin/zktls-pairs/src/main.rs">src/main.rs</a>: Main entrypoint for the application
+│ └── <a href="bin/zktls-pairs/build.rs">build.rs</a>: Builder code used to build the application, you don't need change it
+├── <a href="crates/enclave/">enclave</a>: The SGX enclave implementation
+│   └── <a href="crates/enclave/src/lib.rs">src/lib.rs</a>: Main library file for the enclave
+│       ├── <a href="crates/enclave/src/error.rs">error.rs</a>: Error types and result alias
+│       ├── <a href="crates/enclave/src/tcp_stream_oc.rs">tcp_stream_oc.rs</a>: Untrusted TCP stream wrapper
+│       └── <a href="crates/enclave/src/tls.rs">tls.rs</a>: TLS connection implementation
+└── <a href="crates/untrusted-host/">mock-lib</a>: Mock library for OCALL implementations
 </pre>
 
 ## Building the Enclave
