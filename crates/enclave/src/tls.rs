@@ -18,13 +18,20 @@ pub(crate) fn tls_request<S: AsRef<str>, T: AsRef<str>>(
 ) -> SgxResult<String> {
     let (mut connection, mut tcp_stream) = open_connection(server_host_name.as_ref())?;
 
-    println!("Handshaking with {}", server_host_name.as_ref());
+    tracing::info!("Handshaking with {}", server_host_name.as_ref());
     handshake(&mut connection, &mut tcp_stream)?;
-    println!("Is handshake done : {:?}", !connection.is_handshaking());
-    println!("TLS version: {:?}", connection.protocol_version());
+    tracing::info!("Is handshake done : {:?}", !connection.is_handshaking());
+    tracing::info!("TLS version: {:?}", connection.protocol_version());
 
     let symbols_request_bytes = generate_request(symbols, server_host_name);
-    request_symbols(connection, tcp_stream, &symbols_request_bytes)
+    tracing::debug!(
+        "Sending request: {:?}",
+        String::from_utf8_lossy(&symbols_request_bytes)
+    );
+
+    let resp = request_symbols(connection, tcp_stream, &symbols_request_bytes);
+    tracing::info!("Is response fine : {}", resp.is_ok());
+    resp
 }
 
 /// We are using the default rustls configuration, including patched version of ['_ring_'] crate.
@@ -43,7 +50,7 @@ fn open_connection<S: AsRef<str>>(
         );
     }
     if stream_ptr.is_null() {
-        eprintln!("Failed to get tcp stream");
+        tracing::error!("Failed to get tcp stream");
         return Err(SgxStatus::Unexpected.into());
     }
     let tcp_stream_oc = TcpStreamOc::new(stream_ptr);
@@ -62,15 +69,15 @@ fn open_connection<S: AsRef<str>>(
 
 fn handshake(connection: &mut ClientConnection, tcp_stream: &mut TcpStreamOc) -> SgxResult<()> {
     while connection.is_handshaking() {
-        println!("(ECALL) Handshake in progress...");
+        tracing::debug!("Handshake in progress...");
         if connection.wants_write() {
-            println!("(ECALL) Handshake in progress... write");
+            tracing::debug!("Handshake in progress... write");
             let mut buf = Vec::new();
             connection.write_tls(&mut buf)?;
             tcp_stream.write_all(&buf)?;
         }
         if connection.wants_read() {
-            println!("(ECALL) Handshake in progress... read");
+            tracing::debug!("Handshake in progress... read");
             let mut buf = vec![0u8; 4096];
             let bytes_read = tcp_stream.read(&mut buf)?;
             if bytes_read == 0 {

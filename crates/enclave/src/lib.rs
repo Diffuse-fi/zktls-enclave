@@ -39,15 +39,17 @@ extern "C" {
 }
 
 pub(crate) const BINANCE_API_HOST: &str = "data-api.binance.vision";
+pub(crate) const HARDCODED_DECIMALS: u32 = 8;
 
-/**
- * This is an ECALL function defined in the edl file.
- * It will be called by the application.
- */
 #[no_mangle]
 pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
-    println!("=============== Trusted execution =================");
-    println!("form a request inside the TEE");
+    let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
+
+    tracing_subscriber::fmt().with_env_filter(env_filter).init();
+
+    tracing::debug!("=============== Trusted execution =================");
+    tracing::info!("Form a request inside the TEE");
 
     // data can be passed betwen enclave and outer world only with byte arrays
     let mut pairs_list_buffer: [u8; 8192] = [0; 8192];
@@ -74,14 +76,14 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
     let response_str = match tls_request(BINANCE_API_HOST.to_string(), currency_pairs_bytes) {
         Ok(response) => response,
         Err(e) => {
-            eprintln!("Error encountered in TLS request: {e}");
+            tracing::error!("Error encountered in TLS request: {e}");
             return SgxStatus::Unexpected;
         }
     };
 
     let parts: Vec<&str> = response_str.split("\r\n\r\n").collect();
     if parts.len() < 2 {
-        eprintln!("Unexpected response format");
+        tracing::error!("Unexpected response format");
         return SgxStatus::Unexpected;
     }
 
@@ -99,15 +101,15 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
         .filter_map(|item| {
             let pair = item["symbol"].as_str()?;
 
-            println!("let pair: {}", pair);
+            tracing::debug!("let pair: {}", pair);
 
-            println!(
+            tracing::debug!(
                 "currency_pairs.contains(&pair.to_string()): {}",
                 currency_pairs.contains(&pair.to_string())
             );
 
             if !currency_pairs.contains(&pair.to_string()) {
-                println!("!currency_pairs.contains(&pair.to_string())");
+                tracing::debug!("!currency_pairs.contains(&pair.to_string())");
                 return None;
             }
 
@@ -126,7 +128,6 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
                 .expect("Failed to parse fractional part");
 
             let mut price: u64 = integer * 100000000;
-            const HARDCODED_DECIMALS: u32 = 8;
             let decimal_points: u32 = integer_and_fractional[1]
                 .chars()
                 .count()
@@ -141,15 +142,23 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
 
             let timestamp = item["closeTime"].as_u64()?;
 
-            println!("pair: {}", pair);
-            println!("price: {}", price);
-            println!("timestamp: {}", timestamp);
+            tracing::debug!("pair: {}", pair);
+            tracing::debug!("price: {}", price);
+            tracing::debug!("timestamp: {}", timestamp);
 
             Some((pair.to_string(), price, timestamp))
         })
         .collect();
 
-    println!("filtered_items:{:?}", filtered_items);
+    tracing::info!("Filtered items:");
+    for (pair, price, timestamp) in &filtered_items {
+        tracing::info!(
+            "Pair: {:<10} | Price: {:>15} | Timestamp: {}",
+            pair,
+            price,
+            timestamp
+        );
+    }
 
     let pairs: Vec<String> = filtered_items
         .iter()
@@ -164,9 +173,9 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
         .map(|(_, _, timestamp)| timestamp.to_string())
         .collect();
 
-    println!("pairs:     {:?}", pairs);
-    println!("Prices:      {:?}", prices);
-    println!("Close times: {:?}", timestamps);
+    tracing::info!("pairs:\t{:?}", pairs);
+    tracing::info!("Prices:\t{:?}", prices);
+    tracing::info!("Close times:\t{:?}", timestamps);
 
     print_vec_of_strings(pairs, "pairs.bin");
     print_vec_of_strings(prices, "prices.bin");
@@ -180,10 +189,10 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
         let timestamp_hash = abi_encode_and_keccak(InputValue::U64(*timestamp));
 
         // debug info
-        println!("pair_hash:     0x{}", hex::encode(pair_hash));
-        println!("price_hash:      0x{}", hex::encode(price_hash));
-        println!("timestamp_hash: 0x{}", hex::encode(timestamp_hash));
-        println!("----------------------------------------------");
+        tracing::debug!("pair_hash:     0x{}", hex::encode(pair_hash));
+        tracing::debug!("price_hash:      0x{}", hex::encode(price_hash));
+        tracing::debug!("timestamp_hash: 0x{}", hex::encode(timestamp_hash));
+        tracing::debug!("----------------------------------------------");
 
         all_hashes.extend_from_slice(&pair_hash);
         all_hashes.extend_from_slice(&price_hash);
@@ -195,7 +204,7 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
     let mut final_hash = [0u8; 32];
     final_hasher.finalize(&mut final_hash);
 
-    println!("Final hash of all items: 0x{}", hex::encode(final_hash));
+    tracing::info!("Final hash of all items: 0x{}", hex::encode(final_hash));
 
     // The following code is used to generate an attestation report
     // Must be run on sgx-supported machine
@@ -214,7 +223,7 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
     let attestation = automata_sgx_sdk::dcap::dcap_quote(data);
     let result = match attestation {
         Ok(attestation) => {
-            println!("DCAP attestation: 0x{}", hex::encode(&attestation));
+            tracing::info!("DCAP attestation:\n0x{}", hex::encode(&attestation));
 
             let filename_bytes = create_buffer_from_stirng("sgx_quote.bin".to_string());
             ocall_write_to_file(
@@ -227,11 +236,11 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
             SgxStatus::Success
         }
         Err(e) => {
-            println!("Generating attestation failed: {:?}", e);
+            tracing::error!("Generating attestation failed: {:?}", e);
             SgxStatus::Unexpected
         }
     };
-    println!("=============== End of trusted execution =================");
+    tracing::debug!("=============== End of trusted execution =================");
 
     result
 }

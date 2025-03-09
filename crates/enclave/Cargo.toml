@@ -20,5 +20,8 @@ rustls.workspace = true
 webpki-roots.workspace = true
 thiserror.workspace = true
 
+tracing.workspace = true
+tracing-subscriber = { workspace = true, features = ["env-filter"]}
+
 serde = { workspace = true, features = ["derive"]}
 tiny-keccak = { workspace = true, features = ["sha3", "keccak"]}
