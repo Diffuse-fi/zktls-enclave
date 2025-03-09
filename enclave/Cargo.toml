@@ -21,4 +21,4 @@ webpki-roots.workspace = true
 thiserror.workspace = true
 
 serde = { workspace = true, features = ["derive"]}
-tiny-keccak = { workspace = true, features = ["sha3"]}
+tiny-keccak = { workspace = true, features = ["sha3", "keccak"]}
