@@ -92,7 +92,7 @@ pub unsafe extern "C" fn ocall_tcp_read(
         .read(buf)
         .inspect_err(|e| tracing::error!("ocall_tcp_read error: {}", e))
         .unwrap_or_default();
-    *read_len = stream_read_len;
+    ptr::write_unaligned(read_len, stream_read_len);
     tracing::debug!("=============== End of untrusted tcp_read =================");
 }
 
