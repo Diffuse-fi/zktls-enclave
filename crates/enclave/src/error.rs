@@ -19,6 +19,9 @@ pub(crate) enum SgxError {
 
     #[error(transparent)]
     DnsName(#[from] rustls::pki_types::InvalidDnsNameError),
+
+    #[error(transparent)]
+    SerdeJson(#[from] serde_json::Error),
 }
 
 pub(crate) type SgxResult<T> = Result<T, SgxError>;

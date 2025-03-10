@@ -1,6 +1,7 @@
 extern crate core;
 
 mod error;
+mod parser;
 mod tcp_stream_oc;
 mod tls;
 
@@ -8,11 +9,10 @@ use std::{fmt::Debug, string::String};
 
 use automata_sgx_sdk::types::SgxStatus;
 use ethabi::{Token, Uint};
-use hex;
-use serde_json::{json, Value};
+use serde_json::json;
 use tiny_keccak::{Hasher, Keccak};
 
-use crate::{tcp_stream_oc::UntrustedTcpStreamPtr, tls::tls_request};
+use crate::{parser::get_filtered_items, tcp_stream_oc::UntrustedTcpStreamPtr, tls::tls_request};
 
 extern "C" {
     fn ocall_get_tcp_stream(server_address: *const u8, stream_ptr: *mut UntrustedTcpStreamPtr);
@@ -73,7 +73,7 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
 
     let currency_pairs_bytes = json!(currency_pairs).to_string();
 
-    let response_str = match tls_request(BINANCE_API_HOST.to_string(), currency_pairs_bytes) {
+    let response_str = match tls_request(BINANCE_API_HOST, currency_pairs_bytes) {
         Ok(response) => response,
         Err(e) => {
             tracing::error!("Error encountered in TLS request: {e}");
@@ -81,74 +81,16 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
         }
     };
 
-    let parts: Vec<&str> = response_str.split("\r\n\r\n").collect();
-    if parts.len() < 2 {
-        tracing::error!("Unexpected response format");
-        return SgxStatus::Unexpected;
-    }
-
-    let json_body = parts[1].trim();
-
-    let json_from_server: Value = serde_json::from_str(json_body).expect("Failed to parse JSON");
+    let filtered_items = match get_filtered_items(response_str, &currency_pairs) {
+        Ok(items) => items,
+        Err(e) => {
+            tracing::error!("Error encountered in parsing response: {e}");
+            return SgxStatus::Unexpected;
+        }
+    };
 
     // We don't need to output the data exactly as it came from the server.
     // The enclave content is trusted, so why not output JSON in a convenient form?
-
-    let filtered_items: Vec<(String, u64, u64)> = json_from_server
-        .as_array()
-        .expect("Expected JSON array")
-        .iter()
-        .filter_map(|item| {
-            let pair = item["symbol"].as_str()?;
-
-            tracing::debug!("let pair: {}", pair);
-
-            tracing::debug!(
-                "currency_pairs.contains(&pair.to_string()): {}",
-                currency_pairs.contains(&pair.to_string())
-            );
-
-            if !currency_pairs.contains(&pair.to_string()) {
-                tracing::debug!("!currency_pairs.contains(&pair.to_string())");
-                return None;
-            }
-
-            let price_str = item["lastPrice"].as_str()?;
-            let integer_and_fractional: Vec<&str> = price_str.split('.').collect();
-
-            if integer_and_fractional.len() != 2 {
-                panic!("price is not float number!");
-            }
-
-            let integer: u64 = integer_and_fractional[0]
-                .parse()
-                .expect("Failed to parse integer part");
-            let fractional: u64 = integer_and_fractional[1]
-                .parse()
-                .expect("Failed to parse fractional part");
-
-            let mut price: u64 = integer * 100000000;
-            let decimal_points: u32 = integer_and_fractional[1]
-                .chars()
-                .count()
-                .try_into()
-                .unwrap();
-            assert!(
-                decimal_points <= HARDCODED_DECIMALS,
-                "price decimal points <= 8 are hardcoded"
-            ); // TODO 8 hardcoded
-
-            price += fractional * 10u64.pow(HARDCODED_DECIMALS - decimal_points);
-
-            let timestamp = item["closeTime"].as_u64()?;
-
-            tracing::debug!("pair: {}", pair);
-            tracing::debug!("price: {}", price);
-            tracing::debug!("timestamp: {}", timestamp);
-
-            Some((pair.to_string(), price, timestamp))
-        })
-        .collect();
 
     tracing::info!("Filtered items:");
     for (pair, price, timestamp) in &filtered_items {
