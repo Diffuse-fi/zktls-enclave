@@ -1,5 +1,6 @@
 // Declare the mock_lib as an external crate, since it contains OCALL which will be called by the enclave.
 // The automata_sgx_sdk will link the `untrusted_execution` OCALL to the mock_lib.
+use clap::{Arg, Command};
 extern crate mock_lib;
 
 use automata_sgx_sdk::types::SgxStatus;
@@ -18,6 +19,27 @@ automata_sgx_sdk::enclave! {
  */
 fn main() {
     println!("=============== Starting the app =================");
+
+    let matches = Command::new("my_app")
+        .arg(
+            Arg::new("pairs_file_path")
+                .long("pairs_file_path")
+                .required(true)
+                .help("Path to the file with pairs")
+                // Вариант 1 (через количество аргументов):
+                .num_args(1)
+
+                // Или вариант 2 (через «действие»):
+                // .action(ArgAction::Set)
+        )
+        .get_matches();
+
+    let pairs_file_path = matches
+        .get_one::<String>("pairs_file_path")
+        .expect("Required parameter not found");
+
+    println!("Path to the pairs file: {}", pairs_file_path);
+
     let result = Enclave::new().trusted_execution().unwrap();
     if !result.is_success() {
         println!("{:?}", result);

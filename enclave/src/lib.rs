@@ -32,6 +32,8 @@ extern "C" {
     );
 
     fn ocall_read_from_file(
+        filename_bytes: *const u8,
+        filename_len: usize,
         pairs_list_buffer: *mut u8,
         pairs_list_buffer_len: usize,
         pairs_list_actual_len: *mut usize,
@@ -45,7 +47,10 @@ pub(crate) const BINANCE_API_HOST: &str = "data-api.binance.vision";
  * It will be called by the application.
  */
 #[no_mangle]
-pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
+pub unsafe extern "C" fn trusted_execution(
+    file_path_ptr: *const u8,
+    file_path_len: usize
+) -> SgxStatus {
     println!("=============== Trusted execution =================");
     println!("form a request inside the TEE");
 
@@ -54,6 +59,8 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
     let mut pairs_list_actual_len: usize = 0;
 
     ocall_read_from_file(
+        file_path_ptr,
+        file_path_len,
         pairs_list_buffer.as_mut_ptr(),
         pairs_list_buffer.len(),
         &mut pairs_list_actual_len as *mut usize,
