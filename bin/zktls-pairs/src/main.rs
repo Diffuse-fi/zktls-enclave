@@ -9,9 +9,12 @@ automata_sgx_sdk::enclave! {
     }
 }
 
-fn main() {
-    let result = Enclave::new().trusted_execution().unwrap();
+fn main() -> anyhow::Result<()> {
+    let result = Enclave::new()
+        .trusted_execution()
+        .map_err(|e| anyhow::anyhow!("{:?}", e))?;
     if !result.is_success() {
         println!("{:?}", result);
     }
+    Ok(())
 }
