@@ -35,34 +35,32 @@ pub(crate) fn get_filtered_items<S: AsRef<str>, T: AsRef<str>>(
             }
 
             let price_str = item["lastPrice"].as_str()?;
-            let integer_and_fractional: Vec<&str> = price_str.split('.').collect();
-
-            if integer_and_fractional.len() != 2 {
-                panic!("price is not float number!");
-            }
-
-            let integer: u64 = integer_and_fractional[0].parse().ok()?;
-            let fractional: u64 = integer_and_fractional[1].parse().ok()?;
-
-            let mut price: u64 = integer * 100000000;
-            let decimal_points = integer_and_fractional[1].chars().count() as u32;
-
-            assert!(
-                decimal_points <= HARDCODED_DECIMALS,
-                "price decimal points <= 8 are hardcoded"
-            ); // TODO 8 hardcoded
-
-            price += fractional * 10u64.pow(HARDCODED_DECIMALS - decimal_points);
+            let price = parse_price(price_str)?;
 
             let timestamp = item["closeTime"].as_u64()?;
-
-            tracing::debug!("pair: {}", pair);
-            tracing::debug!("price: {}", price);
-            tracing::debug!("timestamp: {}", timestamp);
 
             Some((pair.to_string(), price, timestamp))
         })
         .collect();
 
     Ok(filtered_items)
+}
+
+fn parse_price(price_str: &str) -> Option<u64> {
+    let parts: Vec<&str> = price_str.split('.').collect();
+    if parts.len() != 2 {
+        panic!("price is not float number!");
+    }
+    let integer: u64 = parts[0].parse().ok()?;
+    let fractional: u64 = parts[1].parse().ok()?;
+    let mut price: u64 = integer * (10u64.pow(HARDCODED_DECIMALS));
+    let decimal_points = parts[1].chars().count() as u32;
+
+    assert!(
+        decimal_points <= HARDCODED_DECIMALS,
+        "price decimal points <= 8 are hardcoded"
+    );
+
+    price += fractional * 10u64.pow(HARDCODED_DECIMALS - decimal_points);
+    Some(price)
 }

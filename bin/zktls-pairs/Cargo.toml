@@ -11,8 +11,9 @@ tstd_app = ["automata-sgx-sdk/tstd_app"]
 enclave = { path = "../../crates/enclave", config = "sgx/config.xml", edl = "sgx/enclave.edl", lds = "sgx/enclave.lds", key = "sgx/private.pem"}
 
 [dependencies]
-automata-sgx-sdk = { workspace = true }
-untrusted-host = { workspace = true }
+automata-sgx-sdk.workspace = true
+anyhow.workspace = true
+untrusted-host.workspace = true
 
 [build-dependencies]
-automata-build-script = { workspace = true }
+automata-build-script.workspace = true
