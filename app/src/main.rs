@@ -9,7 +9,7 @@ use automata_sgx_sdk::types::SgxStatus;
 automata_sgx_sdk::enclave! {
     name: Enclave,
     ecall: {
-        fn trusted_execution() -> SgxStatus;
+        fn trusted_execution(file_path_ptr: *const u8, file_path_len: u32) -> SgxStatus;
     }
 }
 
@@ -26,11 +26,7 @@ fn main() {
                 .long("pairs_file_path")
                 .required(true)
                 .help("Path to the file with pairs")
-                // Вариант 1 (через количество аргументов):
                 .num_args(1)
-
-                // Или вариант 2 (через «действие»):
-                // .action(ArgAction::Set)
         )
         .get_matches();
 
@@ -40,7 +36,10 @@ fn main() {
 
     println!("Path to the pairs file: {}", pairs_file_path);
 
-    let result = Enclave::new().trusted_execution().unwrap();
+    let result = Enclave::new().trusted_execution(
+        path_bytes.as_ptr(),
+        path_bytes.len() as u32
+    ).unwrap();
     if !result.is_success() {
         println!("{:?}", result);
     }
