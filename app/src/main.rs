@@ -35,7 +35,10 @@ fn main() {
         .expect("Required parameter not found");
 
     println!("Path to the pairs file: {}", pairs_file_path);
-
+    
+    let mut path_bytes = pairs_file_path.clone().into_bytes();
+    path_bytes.push(0);
+    
     let result = Enclave::new().trusted_execution(
         path_bytes.as_ptr(),
         path_bytes.len() as u32
