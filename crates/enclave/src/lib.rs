@@ -46,7 +46,7 @@ pub(crate) const HARDCODED_DECIMALS: u32 = 8;
 #[no_mangle]
 pub unsafe extern "C" fn trusted_execution(
     file_path_ptr: *const u8,
-    file_path_len: usize    
+    file_path_len: usize
 ) -> SgxStatus {
     let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
