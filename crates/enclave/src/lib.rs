@@ -42,7 +42,7 @@ extern "C" {
 
 pub(crate) const BINANCE_API_HOST: &str = "data-api.binance.vision";
 pub(crate) const HARDCODED_DECIMALS: u32 = 8;
-
+ 
 #[no_mangle]
 pub unsafe extern "C" fn trusted_execution(
     file_path_ptr: *const u8,
