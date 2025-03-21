@@ -14,6 +14,7 @@ enclave = { path = "../../crates/enclave", config = "sgx/config.xml", edl = "sgx
 automata-sgx-sdk.workspace = true
 anyhow.workspace = true
 untrusted-host.workspace = true
+clap.workspace = true
 
 [build-dependencies]
 automata-build-script.workspace = true
