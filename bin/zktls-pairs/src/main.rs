@@ -6,7 +6,7 @@ use clap::{Arg, Command};
 automata_sgx_sdk::enclave! {
     name: Enclave,
     ecall: {
-        fn trusted_execution(file_path_ptr: *const u8, file_path_len: u32) -> SgxStatus;
+        fn trusted_execution(file_path_ptr: *const u8, file_path_len: usize) -> SgxStatus;
     }
 }
 
@@ -31,7 +31,7 @@ fn main() -> anyhow::Result<()> {
     path_bytes.push(0);
 
     let result = Enclave::new()
-        .trusted_execution(path_bytes.as_ptr(), path_bytes.len() as u32)
+        .trusted_execution(path_bytes.as_ptr(), path_bytes.len())
         .map_err(|e| anyhow::anyhow!("{:?}", e))?;
     if !result.is_success() {
         println!("{:?}", result);
