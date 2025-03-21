@@ -2,7 +2,14 @@ extern crate core;
 
 use core::slice;
 use std::{
-    borrow::Cow, ffi::CStr, fs, io::{Read, Write}, net::TcpStream, os::raw::c_char, ptr, time::Duration
+    borrow::Cow,
+    ffi::CStr,
+    fs,
+    io::{Read, Write},
+    net::TcpStream,
+    os::raw::c_char,
+    ptr,
+    time::Duration,
 };
 
 const DEFAULT_TCP_TIMEOUT_SEC: u64 = 5;

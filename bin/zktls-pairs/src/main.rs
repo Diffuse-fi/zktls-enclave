@@ -24,7 +24,7 @@ fn main() -> anyhow::Result<()> {
     let pairs_file_path = matches
         .get_one::<String>("pairs_file_path")
         .ok_or(anyhow::anyhow!("Required parameter not found"))?;
-    
+
     println!("Path to the pairs file: {}", pairs_file_path);
 
     let mut path_bytes = pairs_file_path.clone().into_bytes();
