@@ -13,8 +13,8 @@ automata_sgx_sdk::enclave! {
 fn main() -> anyhow::Result<()> {
     let matches = Command::new("")
         .arg(
-            Arg::new("pairs_file_path")
-                .long("pairs_file_path")
+            Arg::new("pairs-file-path")
+                .long("pairs-file-path")
                 .required(true)
                 .help("Path to the file with pairs")
                 .num_args(1),
@@ -22,7 +22,7 @@ fn main() -> anyhow::Result<()> {
         .get_matches();
 
     let pairs_file_path = matches
-        .get_one::<String>("pairs_file_path")
+        .get_one::<String>("pairs-file-path")
         .ok_or(anyhow::anyhow!("Required parameter not found"))?;
 
     println!("Path to the pairs file: {}", pairs_file_path);
