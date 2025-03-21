@@ -2,13 +2,7 @@ extern crate core;
 
 use core::slice;
 use std::{
-    ffi::CStr,
-    fs,
-    io::{Read, Write},
-    net::TcpStream,
-    os::raw::c_char,
-    ptr,
-    time::Duration,
+    borrow::Cow, ffi::CStr, fs, io::{Read, Write}, net::TcpStream, os::raw::c_char, ptr, time::Duration
 };
 
 const DEFAULT_TCP_TIMEOUT_SEC: u64 = 5;
@@ -131,16 +125,15 @@ pub unsafe fn ocall_read_from_file(
 ) {
     tracing::debug!("=============== Untrusted read_from_file =================");
 
-    let filename = if !filename_bytes.is_null() && filename_len > 0 {
-        let slice = slice::from_raw_parts(filename_bytes, filename_len);
-        String::from_utf8_lossy(slice).to_string()
+    let filename: Cow<str> = if !filename_bytes.is_null() && filename_len > 0 {
+        let slice = unsafe { slice::from_raw_parts(filename_bytes, filename_len) };
+        String::from_utf8_lossy(slice)
     } else {
-        "pairs/list.txt".to_string()
+        Cow::Borrowed("pairs/list.txt")
     };
 
-    println!("Reading from file: {}", filename);
-
-    let pairs_list = fs::read(&filename).expect("Unable to read file");
+    tracing::info!("Reading from file: {}", filename);
+    let pairs_list = fs::read(filename.as_ref()).expect("Unable to read file");
 
     assert!(
         pairs_list.len() <= pairs_list_buffer_len,
