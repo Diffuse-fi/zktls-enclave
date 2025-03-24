@@ -12,7 +12,7 @@ enclave {
 
     trusted {
         public sgx_status_t trusted_execution(
-            [in, string] char* filename_bytes,
+            [in, string] char* filename_bytes
         );
     };
 
