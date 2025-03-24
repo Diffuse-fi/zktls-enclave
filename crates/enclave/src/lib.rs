@@ -8,6 +8,7 @@ mod tls;
 use std::{ffi::CString, fmt::Debug, string::String};
 
 use automata_sgx_sdk::types::SgxStatus;
+use clap::Parser;
 use ethabi::{Token, Uint};
 use serde_json::json;
 use tiny_keccak::{Hasher, Keccak};
@@ -42,8 +43,6 @@ extern "C" {
 pub(crate) const BINANCE_API_HOST: &str = "data-api.binance.vision";
 pub(crate) const HARDCODED_DECIMALS: u32 = 8;
 
-use clap::Parser;
-
 #[derive(Parser)]
 #[clap(author = "Diffuse labs", version = "v0", about)]
 struct ZkTlsPairs {
@@ -54,12 +53,6 @@ struct ZkTlsPairs {
 
 #[no_mangle]
 pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
-    let cli = ZkTlsPairs::parse();
-
-    let cstr = CString::new(cli.pairs_file_path).expect("CString::new failed");
-    println!("cstr filename is : {}", cstr.to_str().unwrap());
-    let path_bytes = cstr.as_ptr() as *const u8;
-
     let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
 
@@ -67,6 +60,10 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
 
     tracing::debug!("=============== Trusted execution =================");
     tracing::info!("Form a request inside the TEE");
+
+    let cli = ZkTlsPairs::parse();
+    let cstr = CString::new(cli.pairs_file_path).expect("CString::new failed");
+    let path_bytes = cstr.as_ptr() as *const u8;
 
     // data can be passed betwen enclave and outer world only with byte arrays
     let mut pairs_list_buffer: [u8; 8192] = [0; 8192];

@@ -25,6 +25,4 @@ tracing-subscriber = { workspace = true, features = ["env-filter"]}
 
 serde = { workspace = true, features = ["derive"]}
 tiny-keccak = { workspace = true, features = ["sha3", "keccak"]}
-
 clap = { workspace = true, features = ["derive"] }
-
