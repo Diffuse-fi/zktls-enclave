@@ -23,7 +23,7 @@ rustls = "0.22.4"
 webpki-roots = "0.26.6"
 reqwest = "0.12.9"
 thiserror = "2.0.12"
-clap = "4.5"
+clap = "4.2"
 
 untrusted-host = { path = "crates/untrusted-host" }
 

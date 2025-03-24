@@ -2,7 +2,6 @@ extern crate core;
 
 use core::slice;
 use std::{
-    borrow::Cow,
     ffi::CStr,
     fs,
     io::{Read, Write},
@@ -132,12 +131,9 @@ pub unsafe fn ocall_read_from_file(
 ) {
     tracing::debug!("=============== Untrusted read_from_file =================");
 
-    let filename: Cow<str> = if !filename_bytes.is_null() && filename_len > 0 {
-        let slice = unsafe { slice::from_raw_parts(filename_bytes, filename_len) };
-        String::from_utf8_lossy(slice)
-    } else {
-        Cow::Borrowed("pairs/list.txt")
-    };
+    assert!(!filename_bytes.is_null(), "Data pointer is null");
+
+    let filename = String::from_utf8_lossy(slice::from_raw_parts(filename_bytes, filename_len));
 
     tracing::info!("Reading from file: {}", filename);
     let pairs_list = fs::read(filename.as_ref()).expect("Unable to read file");
