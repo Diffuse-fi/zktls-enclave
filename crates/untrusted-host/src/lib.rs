@@ -133,7 +133,6 @@ pub unsafe fn ocall_read_from_file(
     assert!(!filename_bytes.is_null(), "Data pointer is null");
 
     let cstr = CStr::from_ptr(filename_bytes as *const c_char);
-
     let filename = match cstr.to_str() {
         Ok(s) => s,
         Err(_) => {
