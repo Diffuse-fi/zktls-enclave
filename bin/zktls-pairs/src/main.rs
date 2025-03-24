@@ -1,12 +1,14 @@
 extern crate mock_lib;
 
+use std::ffi::CString;
+
 use automata_sgx_sdk::types::SgxStatus;
 use clap::Parser;
 
 automata_sgx_sdk::enclave! {
     name: Enclave,
     ecall: {
-        fn trusted_execution(file_path_ptr: *const u8, file_path_len: usize) -> SgxStatus;
+        fn trusted_execution(file_path_ptr: *const u8) -> SgxStatus;
     }
 }
 
@@ -21,10 +23,11 @@ struct ZkTlsPairs {
 fn main() -> anyhow::Result<()> {
     let cli = ZkTlsPairs::parse();
 
-    let path_bytes = cli.pairs_file_path.into_bytes();
+    let cstr = CString::new(cli.pairs_file_path)?;
+    let path_bytes = cstr.as_ptr() as *const u8;
 
     let result = Enclave::new()
-        .trusted_execution(path_bytes.as_ptr(), path_bytes.len())
+        .trusted_execution(path_bytes)
         .map_err(|e| anyhow::anyhow!("{:?}", e))?;
 
     if !result.is_success() {

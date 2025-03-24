@@ -12,8 +12,7 @@ enclave {
 
     trusted {
         public sgx_status_t trusted_execution(
-            [in, size=filename_len] char* filename_bytes,
-            size_t filename_len
+            [in, string] char* filename_bytes,
         );
     };
 
@@ -34,8 +33,7 @@ enclave {
         );
 
         void ocall_read_from_file(
-            [in, size=filename_len] char* filename_bytes,
-            size_t filename_len,
+            [in, string] char* filename_bytes,
             [out, size=pairs_list_buffer_len] char* pairs_list_buffer,
             size_t pairs_list_buffer_len,
             [out] size_t* pairs_list_actual_len

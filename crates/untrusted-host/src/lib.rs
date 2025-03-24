@@ -124,7 +124,6 @@ pub unsafe fn ocall_write_to_file(
 #[no_mangle]
 pub unsafe fn ocall_read_from_file(
     filename_bytes: *const u8,
-    filename_len: usize,
     pairs_list_buffer: *mut u8,
     pairs_list_buffer_len: usize,
     pairs_list_actual_len: *mut usize,
@@ -133,10 +132,18 @@ pub unsafe fn ocall_read_from_file(
 
     assert!(!filename_bytes.is_null(), "Data pointer is null");
 
-    let filename = String::from_utf8_lossy(slice::from_raw_parts(filename_bytes, filename_len));
+    let cstr = CStr::from_ptr(filename_bytes as *const c_char);
+
+    let filename = match cstr.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            tracing::error!("Failed to read filename from buffer");
+            return;
+        }
+    };
 
     tracing::info!("Reading from file: {}", filename);
-    let pairs_list = fs::read(filename.as_ref()).expect("Unable to read file");
+    let pairs_list = fs::read(filename).expect("Unable to read file");
 
     assert!(
         pairs_list.len() <= pairs_list_buffer_len,
