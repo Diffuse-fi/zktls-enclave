@@ -150,7 +150,7 @@ pub unsafe fn ocall_read_from_file(
     );
 
     ptr::copy_nonoverlapping(pairs_list.as_ptr(), pairs_list_buffer, pairs_list.len());
-    *pairs_list_actual_len = pairs_list.len();
+    ptr::write_unaligned(pairs_list_actual_len, pairs_list.len());
 
     tracing::debug!("=============== End of untrusted read_from_file =================");
 }
