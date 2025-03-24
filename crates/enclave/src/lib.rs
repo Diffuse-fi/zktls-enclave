@@ -32,6 +32,7 @@ extern "C" {
     );
 
     fn ocall_read_from_file(
+        filename_bytes: *const u8,
         pairs_list_buffer: *mut u8,
         pairs_list_buffer_len: usize,
         pairs_list_actual_len: *mut usize,
@@ -56,6 +57,7 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
     let mut pairs_list_actual_len: usize = 0;
 
     ocall_read_from_file(
+        file_path_ptr,
         pairs_list_buffer.as_mut_ptr(),
         pairs_list_buffer.len(),
         &mut pairs_list_actual_len as *mut usize,
