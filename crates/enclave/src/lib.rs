@@ -5,7 +5,7 @@ mod parser;
 mod tcp_stream_oc;
 mod tls;
 
-use std::{fmt::Debug, string::String};
+use std::{ffi::CString, fmt::Debug, string::String};
 
 use automata_sgx_sdk::types::SgxStatus;
 use ethabi::{Token, Uint};
@@ -42,8 +42,24 @@ extern "C" {
 pub(crate) const BINANCE_API_HOST: &str = "data-api.binance.vision";
 pub(crate) const HARDCODED_DECIMALS: u32 = 8;
 
+use clap::Parser;
+
+#[derive(Parser)]
+#[clap(author = "Diffuse labs", version = "v0", about)]
+struct ZkTlsPairs {
+    /// Path to the file with pairs
+    #[clap(long, default_value = "pairs/list.txt")]
+    pairs_file_path: String,
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
+    let cli = ZkTlsPairs::parse();
+
+    let cstr = CString::new(cli.pairs_file_path).expect("CString::new failed");
+    println!("cstr filename is : {}", cstr.to_str().unwrap());
+    let path_bytes = cstr.as_ptr() as *const u8;
+
     let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
 
@@ -57,7 +73,7 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
     let mut pairs_list_actual_len: usize = 0;
 
     ocall_read_from_file(
-        file_path_ptr,
+        path_bytes,
         pairs_list_buffer.as_mut_ptr(),
         pairs_list_buffer.len(),
         &mut pairs_list_actual_len as *mut usize,

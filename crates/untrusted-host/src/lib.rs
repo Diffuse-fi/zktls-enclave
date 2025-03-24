@@ -131,7 +131,6 @@ pub unsafe fn ocall_read_from_file(
     tracing::debug!("=============== Untrusted read_from_file =================");
 
     let cstr = CStr::from_ptr(filename_bytes as *const c_char);
-
     let filename = match cstr.to_str() {
         Ok(s) => s,
         Err(_) => {
