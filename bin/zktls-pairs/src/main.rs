@@ -1,3 +1,5 @@
+extern crate mock_lib;
+
 use automata_sgx_sdk::types::SgxStatus;
 use clap::Parser;
 

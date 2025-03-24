@@ -20,8 +20,6 @@ rustls.workspace = true
 webpki-roots.workspace = true
 thiserror.workspace = true
 
-untrusted-host.workspace = true
-
 tracing.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"]}
 

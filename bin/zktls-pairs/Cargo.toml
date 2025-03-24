@@ -15,5 +15,7 @@ automata-sgx-sdk.workspace = true
 anyhow.workspace = true
 clap = { workspace = true, features = ["derive"] }
 
+untrusted-host.workspace = true
+
 [build-dependencies]
 automata-build-script.workspace = true

@@ -1,5 +1,4 @@
 extern crate core;
-extern crate mock_lib;
 
 mod error;
 mod parser;
