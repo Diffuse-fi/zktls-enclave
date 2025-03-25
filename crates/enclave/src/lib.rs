@@ -44,7 +44,7 @@ pub(crate) const BINANCE_API_HOST: &str = "data-api.binance.vision";
 pub(crate) const HARDCODED_DECIMALS: u32 = 8;
 
 #[derive(Parser)]
-#[clap(author = "Diffuse labs", version = "v0", about)]
+#[clap(author = "Diffuse", version = "v0", about)]
 struct ZkTlsPairs {
     /// Path to the file with pairs
     #[clap(long, default_value = "pairs/list.txt")]

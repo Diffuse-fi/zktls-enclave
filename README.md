@@ -103,7 +103,7 @@ When you run the application (e.g., using cargo sgx run), the following steps oc
 ./zktls-pairs --help
 
 enclave v0
-Diffuse labs
+Diffuse
 
 USAGE:
     zktls-pairs [OPTIONS]
