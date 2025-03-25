@@ -123,22 +123,31 @@ pub unsafe fn ocall_write_to_file(
 
 #[no_mangle]
 pub unsafe fn ocall_read_from_file(
+    filename_bytes: *const u8,
     pairs_list_buffer: *mut u8,
     pairs_list_buffer_len: usize,
     pairs_list_actual_len: *mut usize,
 ) {
     tracing::debug!("=============== Untrusted read_from_file =================");
 
-    let pairs_list_path = "pairs/list.txt";
+    let cstr = CStr::from_ptr(filename_bytes as *const c_char);
+    let filename = match cstr.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            tracing::error!("Failed to read filename from buffer");
+            return;
+        }
+    };
 
-    let pairs_list = fs::read(pairs_list_path).expect("Unable to read file");
+    tracing::info!("Reading from file: {}", filename);
+    let pairs_list = fs::read(filename).expect("Unable to read file");
 
     assert!(
         pairs_list.len() <= pairs_list_buffer_len,
         "pairs list does not fit into pairs_list_buffer!"
     );
     ptr::copy_nonoverlapping(pairs_list.as_ptr(), pairs_list_buffer, pairs_list.len());
-    *pairs_list_actual_len = pairs_list.len();
+    ptr::write_unaligned(pairs_list_actual_len, pairs_list.len());
 
     tracing::debug!("=============== End of untrusted read_from_file =================");
 }
