@@ -53,6 +53,8 @@ struct ZkTlsPairs {
 
 #[no_mangle]
 pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
+    let cli = ZkTlsPairs::parse();
+
     let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
 
@@ -61,13 +63,11 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
     tracing::debug!("=============== Trusted execution =================");
     tracing::info!("Form a request inside the TEE");
 
-    let cli = ZkTlsPairs::parse();
-    let cstr = CString::new(cli.pairs_file_path).expect("CString::new failed");
-    let path_bytes = cstr.as_ptr() as *const u8;
-
     // data can be passed betwen enclave and outer world only with byte arrays
     let mut pairs_list_buffer: [u8; 8192] = [0; 8192];
     let mut pairs_list_actual_len: usize = 0;
+    let cstr = CString::new(cli.pairs_file_path).expect("CString::new failed");
+    let path_bytes = cstr.as_ptr() as *const u8;
 
     ocall_read_from_file(
         path_bytes,
