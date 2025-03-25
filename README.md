@@ -98,6 +98,23 @@ When you run the application (e.g., using cargo sgx run), the following steps oc
 - **Cryptographic Hashing & Attestation**: Generates individual hashes for each data component, combines them, and produces a final attestation report using Intel SGX DCAP.
 - **File Outputs**: Writes outputs to files (e.g., pairs.bin, prices.bin, timestamps.bin, sgx_quote.bin).
 
+### Description of use:
+```shell
+./zktls-pairs --help
+
+enclave v0
+Diffuse labs
+
+USAGE:
+    zktls-pairs [OPTIONS]
+
+OPTIONS:
+    -h, --help                                 Print help information
+        --pairs-file-path <PAIRS_FILE_PATH>    Path to the file with pairs [default: pairs/list.txt]
+    -V, --version                              Print version information
+
+```
+
 ## Community and Support
 
 For any questions, discussions, or contributions, join our [Telegram Channel](https://t.me/zkdiffuse). We're active there and ready to help!
