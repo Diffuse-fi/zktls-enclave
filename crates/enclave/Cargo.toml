@@ -9,7 +9,7 @@ tstd_enclave = ["automata-sgx-sdk/tstd_enclave"]
 
 [lib]
 name = "enclave"
-crate-type = ["staticlib"]
+crate-type = ["rlib", "staticlib"]
 
 [dependencies]
 automata-sgx-sdk.workspace = true
