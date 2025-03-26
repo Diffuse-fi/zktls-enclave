@@ -367,6 +367,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "webpki-roots",
+ "zktls-enclave-traits",
 ]
 
 [[package]]
@@ -1918,6 +1919,10 @@ dependencies = [
  "quote",
  "syn 2.0.100",
 ]
+
+[[package]]
+name = "zktls-enclave-traits"
+version = "0.1.0"
 
 [[package]]
 name = "zktls-pairs"

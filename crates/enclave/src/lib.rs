@@ -15,6 +15,7 @@ use tiny_keccak::{Hasher, Keccak};
 
 use crate::{parser::get_filtered_items, tcp_stream_oc::UntrustedTcpStreamPtr, tls::tls_request};
 
+
 extern "C" {
     fn ocall_get_tcp_stream(server_address: *const u8, stream_ptr: *mut UntrustedTcpStreamPtr);
     fn ocall_tcp_write(stream_ptr: UntrustedTcpStreamPtr, data: *const u8, data_len: usize);
@@ -49,6 +50,16 @@ struct ZkTlsPairs {
     /// Path to the file with pairs
     #[clap(long, default_value = "pairs/list.txt")]
     pairs_file_path: String,
+}
+
+
+use zktls_enclave_traits::traits::Test;
+
+
+#[no_mangle]
+pub extern "C" fn zktls_request(tcp: impl Test) -> SgxStatus {
+    tcp.test();
+    SgxStatus::Success
 }
 
 #[no_mangle]
