@@ -56,8 +56,7 @@ struct ZkTlsPairs {
 use zktls_enclave_traits::traits::Test;
 
 
-#[no_mangle]
-pub extern "C" fn zktls_request(tcp: impl Test) -> SgxStatus {
+pub fn zktls_request(tcp: impl Test) -> SgxStatus {
     tcp.test();
     SgxStatus::Success
 }
