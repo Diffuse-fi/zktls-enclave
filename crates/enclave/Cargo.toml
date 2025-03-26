@@ -8,7 +8,7 @@ edition = "2021"
 tstd_enclave = ["automata-sgx-sdk/tstd_enclave"]
 
 [lib]
-name = "enclave"
+name = "tls-enclave"
 crate-type = ["staticlib"]
 
 [dependencies]
