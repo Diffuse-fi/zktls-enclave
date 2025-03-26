@@ -352,25 +352,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 
 [[package]]
-name = "enclave"
-version = "0.1.0"
-dependencies = [
- "automata-sgx-sdk",
- "clap",
- "ethabi",
- "hex",
- "rustls",
- "serde",
- "serde_json",
- "thiserror",
- "tiny-keccak",
- "tracing",
- "tracing-subscriber",
- "webpki-roots",
- "zktls-enclave-traits",
-]
-
-[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1431,6 +1412,25 @@ checksum = "9117f5d4db391c1cf6927e7bea3db74b9a1c1add8f7eda9ffd5364f40f57b82f"
 dependencies = [
  "displaydoc",
  "zerovec",
+]
+
+[[package]]
+name = "tls-enclave"
+version = "0.1.0"
+dependencies = [
+ "automata-sgx-sdk",
+ "clap",
+ "ethabi",
+ "hex",
+ "rustls",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tiny-keccak",
+ "tracing",
+ "tracing-subscriber",
+ "webpki-roots",
+ "zktls-enclave-traits",
 ]
 
 [[package]]

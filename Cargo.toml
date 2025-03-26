@@ -27,6 +27,7 @@ clap = "3.2"
 
 untrusted-host = { path = "crates/untrusted-host" }
 zktls-enclave-traits = { path = "crates/traits/zktls-enclave-traits" }
+tls-enclave = { path = "crates/enclave" }
 
 [patch.crates-io]
 ring = { git = "https://github.com/automata-network/ring-sgx", rev = "e9b37b8f5a7c3331b21a6650f1ce6653d70d0923" }
