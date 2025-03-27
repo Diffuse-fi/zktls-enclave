@@ -57,9 +57,11 @@ impl<S: AsRef<str>> TcpProvider<S> for ZkTlsPairs {
     type Stream = TcpStreamOc;
 
     fn get(&mut self, server_address: S) -> TlsResult<Self::Stream> {
-        assert_eq!(self.server_address, server_address.as_ref(), "Server address mismatch");
-        // Move out the stream. This uses `std::mem::take` to replace it with a default value.
-        // Ensure TcpStreamOc implements Default or modify accordingly.
+        assert_eq!(
+            self.server_address,
+            server_address.as_ref(),
+            "Server address mismatch"
+        );
         Ok(std::mem::take(&mut self.stream_ptr))
     }
 }
