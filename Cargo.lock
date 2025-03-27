@@ -364,6 +364,7 @@ dependencies = [
  "serde_json",
  "thiserror",
  "tiny-keccak",
+ "tls-enclave",
  "tracing",
  "tracing-subscriber",
  "webpki-roots",
@@ -1430,6 +1431,17 @@ checksum = "9117f5d4db391c1cf6927e7bea3db74b9a1c1add8f7eda9ffd5364f40f57b82f"
 dependencies = [
  "displaydoc",
  "zerovec",
+]
+
+[[package]]
+name = "tls-enclave"
+version = "0.1.0"
+dependencies = [
+ "rustls",
+ "serde_json",
+ "thiserror",
+ "tracing",
+ "webpki-roots",
 ]
 
 [[package]]

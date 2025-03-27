@@ -1,6 +1,7 @@
 extern crate core;
 
 mod error;
+mod ocalls;
 mod parser;
 mod tcp_stream_oc;
 mod tls;
@@ -12,40 +13,20 @@ use clap::Parser;
 use ethabi::{Token, Uint};
 use serde_json::json;
 use tiny_keccak::{Hasher, Keccak};
+use tls_enclave::tls_request;
 
-use crate::{parser::get_filtered_items, tcp_stream_oc::UntrustedTcpStreamPtr, tls::tls_request};
-
-extern "C" {
-    fn ocall_get_tcp_stream(server_address: *const u8, stream_ptr: *mut UntrustedTcpStreamPtr);
-    fn ocall_tcp_write(stream_ptr: UntrustedTcpStreamPtr, data: *const u8, data_len: usize);
-    fn ocall_tcp_read(
-        stream_ptr: UntrustedTcpStreamPtr,
-        buffer: *mut u8,
-        max_len: usize,
-        read_len: *mut usize,
-    );
-
-    fn ocall_write_to_file(
-        data_bytes: *const u8,
-        data_len: usize,
-        filename_bytes: *const u8,
-        filename_len: usize,
-    );
-
-    fn ocall_read_from_file(
-        filename_bytes: *const u8,
-        pairs_list_buffer: *mut u8,
-        pairs_list_buffer_len: usize,
-        pairs_list_actual_len: *mut usize,
-    );
-}
+use crate::{
+    ocalls::{ocall_read_from_file, ocall_write_to_file},
+    parser::get_filtered_items,
+    tcp_stream_oc::UntrustedTcpStreamPtr,
+};
 
 pub(crate) const BINANCE_API_HOST: &str = "data-api.binance.vision";
 pub(crate) const HARDCODED_DECIMALS: u32 = 8;
 
 #[derive(Parser)]
 #[clap(author = "Diffuse", version = "v0", about)]
-struct ZkTlsPairs {
+struct ZkTlsPairsCli {
     /// Path to the file with pairs
     #[clap(long, default_value = "pairs/list.txt")]
     pairs_file_path: String,
@@ -53,7 +34,7 @@ struct ZkTlsPairs {
 
 #[no_mangle]
 pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
-    let cli = ZkTlsPairs::parse();
+    let cli = ZkTlsPairsCli::parse();
 
     let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
@@ -88,7 +69,9 @@ pub unsafe extern "C" fn trusted_execution() -> SgxStatus {
 
     let currency_pairs_bytes = json!(currency_pairs).to_string();
 
-    let response_str = match tls_request(BINANCE_API_HOST, currency_pairs_bytes) {
+    let zk_tls_pairs = tls::ZkTlsPairs::new(BINANCE_API_HOST.to_string(), currency_pairs_bytes);
+
+    let response_str = match tls_request(BINANCE_API_HOST, zk_tls_pairs) {
         Ok(response) => response,
         Err(e) => {
             tracing::error!("Error encountered in TLS request: {e}");

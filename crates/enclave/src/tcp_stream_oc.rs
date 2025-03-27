@@ -3,12 +3,20 @@ use std::{
     io::{Read, Write},
 };
 
-use crate::{ocall_tcp_read, ocall_tcp_write};
+use crate::ocalls::{ocall_tcp_read, ocall_tcp_write};
 
 pub(crate) type UntrustedTcpStreamPtr = *mut core::ffi::c_void;
 
 pub struct TcpStreamOc {
     stream_ptr: UntrustedTcpStreamPtr,
+}
+
+impl Default for TcpStreamOc {
+    fn default() -> Self {
+        TcpStreamOc {
+            stream_ptr: core::ptr::null_mut(),
+        }
+    }
 }
 
 impl TcpStreamOc {
