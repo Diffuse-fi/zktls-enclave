@@ -1,11 +1,13 @@
 use std::{ffi::CString, fmt::Debug, ptr};
 
+use sgx_ocalls::{
+    bindings::{ocall_get_tcp_stream, UntrustedTcpStreamPtr},
+    tcp_stream::TcpStreamOc,
+};
 use tls_enclave::{
     error::TlsResult,
     traits::{RequestProvider, TcpProvider},
 };
-
-use crate::{ocalls::ocall_get_tcp_stream, tcp_stream_oc::TcpStreamOc, UntrustedTcpStreamPtr};
 
 #[derive(Debug)]
 pub(crate) struct ZkTlsPairs {

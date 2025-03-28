@@ -1,0 +1,9 @@
+[package]
+name = "sgx-ocalls"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+
+[dependencies]
+tracing.workspace = true

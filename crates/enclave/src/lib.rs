@@ -1,9 +1,7 @@
 extern crate core;
 
 mod error;
-mod ocalls;
 mod parser;
-mod tcp_stream_oc;
 mod tls;
 
 use std::{ffi::CString, fmt::Debug, string::String};
@@ -12,14 +10,11 @@ use automata_sgx_sdk::types::SgxStatus;
 use clap::Parser;
 use ethabi::{Token, Uint};
 use serde_json::json;
+use sgx_ocalls::bindings::*;
 use tiny_keccak::{Hasher, Keccak};
 use tls_enclave::tls_request;
 
-use crate::{
-    ocalls::{ocall_read_from_file, ocall_write_to_file},
-    parser::get_filtered_items,
-    tcp_stream_oc::UntrustedTcpStreamPtr,
-};
+use crate::parser::get_filtered_items;
 
 pub(crate) const BINANCE_API_HOST: &str = "data-api.binance.vision";
 pub(crate) const HARDCODED_DECIMALS: u32 = 8;

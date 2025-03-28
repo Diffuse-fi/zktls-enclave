@@ -362,6 +362,7 @@ dependencies = [
  "rustls",
  "serde",
  "serde_json",
+ "sgx-ocalls",
  "thiserror",
  "tiny-keccak",
  "tls-enclave",
@@ -1145,6 +1146,13 @@ version = "0.1.0"
 source = "git+https://github.com/automata-network/SGXDataCenterAttestationPrimitives.git?branch=automata_sgx_builder#9bf847fe5479995acf6cfb612c016fac3078745b"
 dependencies = [
  "bindgen",
+]
+
+[[package]]
+name = "sgx-ocalls"
+version = "0.1.0"
+dependencies = [
+ "tracing",
 ]
 
 [[package]]
