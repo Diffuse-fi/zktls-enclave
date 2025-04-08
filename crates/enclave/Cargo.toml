@@ -19,6 +19,7 @@ hex.workspace = true
 rustls.workspace = true
 webpki-roots.workspace = true
 thiserror.workspace = true
+tls-enclave.workspace = true
 
 tracing.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"]}
@@ -26,3 +27,5 @@ tracing-subscriber = { workspace = true, features = ["env-filter"]}
 serde = { workspace = true, features = ["derive"]}
 tiny-keccak = { workspace = true, features = ["sha3", "keccak"]}
 clap = { workspace = true, features = ["derive"] }
+
+sgx-ocalls.workspace = true

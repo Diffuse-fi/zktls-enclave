@@ -3,10 +3,9 @@ use std::{
     io::{Read, Write},
 };
 
-use crate::{ocall_tcp_read, ocall_tcp_write};
+use crate::bindings::{ocall_tcp_read, ocall_tcp_write, UntrustedTcpStreamPtr};
 
-pub(crate) type UntrustedTcpStreamPtr = *mut core::ffi::c_void;
-
+/// A safe wrapper for an untrusted TCP stream obtained via OCALLs.
 pub struct TcpStreamOc {
     stream_ptr: UntrustedTcpStreamPtr,
 }
@@ -14,6 +13,14 @@ pub struct TcpStreamOc {
 impl TcpStreamOc {
     pub fn new(stream_ptr: UntrustedTcpStreamPtr) -> Self {
         TcpStreamOc { stream_ptr }
+    }
+}
+
+impl Default for TcpStreamOc {
+    fn default() -> Self {
+        TcpStreamOc {
+            stream_ptr: core::ptr::null_mut(),
+        }
     }
 }
 
@@ -31,6 +38,7 @@ impl Read for TcpStreamOc {
         Ok(read_len)
     }
 }
+
 impl Write for TcpStreamOc {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         unsafe {
@@ -45,7 +53,7 @@ impl Write for TcpStreamOc {
 
 impl Debug for TcpStreamOc {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "TcpStreamOc")
+        write!(f, "TcpStreamOc {{ stream_ptr: {:?} }}", self.stream_ptr)
     }
 }
 

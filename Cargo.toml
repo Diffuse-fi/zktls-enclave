@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["bin/zktls-pairs", "crates/enclave", "crates/untrusted-host"]
+members = ["bin/zktls-pairs", "crates/enclave", "crates/sgx-ocalls", "crates/tls-enclave", "crates/untrusted-host"]
 
 [workspace.package]
 version = "0.1.0"
@@ -26,6 +26,8 @@ thiserror = "2.0.12"
 clap = "3.2"
 
 untrusted-host = { path = "crates/untrusted-host" }
+tls-enclave = { path = "crates/tls-enclave" }
+sgx-ocalls = { path = "crates/sgx-ocalls" }
 
 [patch.crates-io]
 ring = { git = "https://github.com/automata-network/ring-sgx", rev = "e9b37b8f5a7c3331b21a6650f1ce6653d70d0923" }
