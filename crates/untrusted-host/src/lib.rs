@@ -26,7 +26,7 @@ pub unsafe extern "C" fn ocall_get_tcp_stream(
     let address = match cstr.to_str() {
         Ok(s) => s,
         Err(_) => {
-            *stream_ptr = ptr::null_mut();
+            ptr::write_unaligned(stream_ptr, ptr::null_mut());
             return;
         }
     };
@@ -43,7 +43,7 @@ pub unsafe extern "C" fn ocall_get_tcp_stream(
         }
         Err(e) => {
             tracing::error!("ocall_get_tcp_stream failed: {}", e);
-            *stream_ptr = ptr::null_mut();
+            ptr::write_unaligned(stream_ptr, ptr::null_mut());
         }
     }
     tracing::debug!("=============== End of untrusted get_tcp_stream =================");
