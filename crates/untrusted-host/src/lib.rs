@@ -11,7 +11,7 @@ use std::{
     time::Duration,
 };
 
-const DEFAULT_TCP_TIMEOUT_SEC: u64 = 5;
+const DEFAULT_TCP_TIMEOUT_SEC: u64 = 60;
 
 // # Safety
 // The caller must ensure that the `server_address` is a valid C string.
